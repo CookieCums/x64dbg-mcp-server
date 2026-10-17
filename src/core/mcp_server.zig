@@ -304,7 +304,21 @@ pub fn stop() void {
         _ = CloseHandle(h);
         server_handle = null;
     }
-    bridge.logPuts("[x64dbg-MCP Server] MCP server stopped.\x00");
+    {
+        var buf: [192]u8 = undefined;
+        const prefix = "[x64dbg-MCP Server] MCP server stopped (was on ";
+        @memcpy(buf[0..prefix.len], prefix);
+        var pos: usize = prefix.len;
+        @memcpy(buf[pos .. pos + server_ip_len], server_ip[0..server_ip_len]);
+        pos += server_ip_len;
+        buf[pos] = ':';
+        pos += 1;
+        pos += fmtPort(server_port, buf[pos..]);
+        buf[pos] = ')';
+        pos += 1;
+        buf[pos] = 0;
+        bridge.logPuts(@ptrCast(&buf));
+    }
 }
 
 fn serverThreadProc(_: ?*anyopaque) callconv(.winapi) u32 {

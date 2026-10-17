@@ -35,10 +35,8 @@ var listen_sock: SOCKET = INVALID_SOCKET;
 pub var server_port: u16 = 9094;
 var server_ip: [64]u8 = .{ '1', '2', '7', '.', '0', '.', '0', '.', '1' } ++ .{0} ** 55;
 var server_ip_len: usize = 9;
-var auth_token: [64]u8 = .{0} ** 64;
-var auth_token_len: usize = 0;
 
-pub fn setConfig(ip: []const u8, port: u16, token: []const u8) void {
+pub fn setConfig(ip: []const u8, port: u16, _: []const u8) void {
     server_port = port;
     if (ip.len > 0 and ip.len < 64) {
         @memcpy(server_ip[0..ip.len], ip);
@@ -47,12 +45,6 @@ pub fn setConfig(ip: []const u8, port: u16, token: []const u8) void {
         const default = "127.0.0.1";
         @memcpy(server_ip[0..default.len], default);
         server_ip_len = default.len;
-    }
-    if (token.len > 0 and token.len <= 64) {
-        @memcpy(auth_token[0..token.len], token);
-        auth_token_len = token.len;
-    } else {
-        auth_token_len = 0;
     }
 }
 

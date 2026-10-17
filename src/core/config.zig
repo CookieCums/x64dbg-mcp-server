@@ -645,11 +645,9 @@ fn relayoutChildren() void {
     moveCtrl(lbl_url, 112, 185, 310, 20);
     if (dlg_hwnd != null) {
         var h: HWND = GetDlgItem(dlg_hwnd, IDC_SAVE);
-        moveCtrl(h, 240, 280, 90, 30);
+        moveCtrl(h, 240, 230, 90, 30);
         h = GetDlgItem(dlg_hwnd, IDC_CANCEL);
-        moveCtrl(h, 340, 280, 90, 30);
-        moveCtrl(h, 310, 128, 65, 24);
-        moveCtrl(h, 380, 128, 45, 24);
+        moveCtrl(h, 340, 230, 90, 30);
     }
 }
 

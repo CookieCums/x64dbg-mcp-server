@@ -33,8 +33,8 @@ pub var server_running: bool = false;
 var listen_sock: SOCKET = INVALID_SOCKET;
 
 pub var server_port: u16 = 9094;
-var server_ip: [64]u8 = .{ '1', '2', '7', '.', '0', '.', '0', '.', '1' } ++ .{0} ** 55;
-var server_ip_len: usize = 9;
+var server_ip: [64]u8 = .{ '0', '.', '0', '.', '0', '.', '0' } ++ .{0} ** 57;
+var server_ip_len: usize = 7;
 
 pub fn setConfig(ip: []const u8, port: u16, _: []const u8) void {
     server_port = port;
@@ -42,7 +42,7 @@ pub fn setConfig(ip: []const u8, port: u16, _: []const u8) void {
         @memcpy(server_ip[0..ip.len], ip);
         server_ip_len = ip.len;
     } else {
-        const default = "127.0.0.1";
+        const default = "0.0.0.0";
         @memcpy(server_ip[0..default.len], default);
         server_ip_len = default.len;
     }

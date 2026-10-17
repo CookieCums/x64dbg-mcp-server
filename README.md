@@ -40,7 +40,7 @@ Built with [Zig](https://ziglang.org/) — zero dependencies, single-binary outp
 - **Zero Dependencies:** Pure native plugin, no runtime or framework needed.
 - **x32 and x64:** Single codebase, builds both architectures from one command.
 - **Dual Transport:** Streamable HTTP + SSE — compatible with any MCP client (new and legacy).
-- **Bearer Auth:** Mandatory token authentication — auto-generated on first run, required on every request to prevent unauthorized access.
+- **Local unauthenticated access:** Token authentication is disabled in this branch; use only with a loopback bind address (`127.0.0.1`).
 - **Config Dialog:** Change IP/port/token from the Plugins menu, auto-restarts the server on save.
 - **Auto-Start:** MCP server starts automatically when x64dbg launches.
 - **Cross-Compile:** Build Windows plugins from Linux, macOS, or WSL.
@@ -68,10 +68,7 @@ Add to your MCP client config (`.mcp.json`, etc.):
   "mcpServers": {
     "x64dbg": {
       "type": "http",
-      "url": "http://localhost:9094/",
-      "headers": {
-        "Authorization": "Bearer YOUR_TOKEN_HERE"
-      }
+      "url": "http://localhost:9094/"
     }
   }
 }
@@ -83,10 +80,7 @@ Add to your MCP client config (`.mcp.json`, etc.):
   "mcpServers": {
     "x64dbg": {
       "type": "sse",
-      "url": "http://localhost:9094/sse",
-      "headers": {
-        "Authorization": "Bearer YOUR_TOKEN_HERE"
-      }
+      "url": "http://localhost:9094/sse"
     }
   }
 }
@@ -209,16 +203,14 @@ AI: [calls StepOver x3, GetCallStack]
 
 ## Configuration
 
-Go to **Plugins > x64dbg-MCP Server > Configure MCP Server...** to change the bind address, port, and auth token.
+Go to **Plugins > x64dbg-MCP Server > Configure MCP Server...** to change the bind address and port.
 
 - `0.0.0.0` — listen on all interfaces (for WSL/remote access)
 - `127.0.0.1` — local-only access
 
-### Authentication
+### Security
 
-A Bearer token is auto-generated on first run and required on every request. The MCP server has full debugger control and can read/write process memory — all requests without a valid token receive `401 Unauthorized`. Click **Generate** in the config dialog to rotate the token, or **Copy** to copy it to clipboard. Clients must include the token as an `Authorization: Bearer <token>` header.
-
-Changes take effect immediately — the server auto-restarts on save. Config is persisted to `mcp_config.json` next to the x64dbg executable.
+Authentication is disabled in this branch. The MCP endpoint exposes full debugger control, including process memory read/write. Keep the bind address at `127.0.0.1` and do not expose the server to untrusted networks.
 
 
 ## Building

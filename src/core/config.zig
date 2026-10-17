@@ -128,9 +128,6 @@ const IDC_IP: c_int = 101;
 const IDC_PORT: c_int = 102;
 const IDC_URL: c_int = 103;
 const IDC_AUTOSTART: c_int = 104;
-const IDC_TOKEN: c_int = 105;
-const IDC_GENERATE: c_int = 106;
-const IDC_COPY_TOKEN: c_int = 107;
 const IDC_SAVE: c_int = 1;
 const IDC_CANCEL: c_int = 2;
 const BN_CLICKED: u32 = 0;
@@ -138,8 +135,6 @@ const WM_CTLCOLORSTATIC: u32 = 0x0138;
 const CF_TEXT: u32 = 1;
 const GMEM_MOVEABLE: u32 = 0x0002;
 const WHITE_BRUSH: c_int = 0;
-
-extern "advapi32" fn SystemFunction036(buf: [*]u8, len: u32) callconv(.winapi) u8;
 
 // ── DPI awareness (runtime-resolved for Win7/8 compat) ─────────────
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2: ?*anyopaque = @ptrFromInt(@as(usize, @bitCast(@as(isize, -4))));
@@ -190,36 +185,17 @@ fn sd(design: c_int, dpi: u32) c_int {
     return @intCast(@divTrunc(@as(i64, design) * dpi, USER_DEFAULT_SCREEN_DPI));
 }
 
-fn generateToken(buf: *[32]u8) void {
-    var raw: [16]u8 = undefined;
-    _ = SystemFunction036(&raw, 16);
-    const hex = "0123456789abcdef";
-    for (raw, 0..) |b, i| {
-        buf[i * 2] = hex[b >> 4];
-        buf[i * 2 + 1] = hex[b & 0x0f];
-    }
-}
-
 // ── Config data ────────────────────────────────────────────────────
 pub const Config = struct {
     ip: [64]u8 = undefined,
     ip_len: usize = 0,
     port: u16 = 0,
     auto_start: bool = true,
-    auth_token: [64]u8 = undefined,
-    auth_token_len: usize = 0,
 
     pub fn ipSlice(self: *const Config) []const u8 {
         return self.ip[0..self.ip_len];
     }
 
-    pub fn tokenSlice(self: *const Config) []const u8 {
-        return self.auth_token[0..self.auth_token_len];
-    }
-
-    pub fn hasAuth(self: *const Config) bool {
-        return self.auth_token_len > 0;
-    }
 };
 
 var config_path: [512]u8 = undefined;
@@ -261,12 +237,12 @@ pub fn load() Config {
 
     const path = getConfigPath();
     const h = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
-    if (h == INVALID_HANDLE or h == null) return ensureToken(&cfg);
+    if (h == INVALID_HANDLE or h == null) return cfg;
     defer _ = CloseHandle(h);
 
     var buf: [512]u8 = undefined;
     var bytes_read: u32 = 0;
-    if (ReadFile(h, &buf, 512, &bytes_read, null) == 0) return ensureToken(&cfg);
+    if (ReadFile(h, &buf, 512, &bytes_read, null) == 0) return cfg;
 
     const json_data = buf[0..bytes_read];
 
@@ -288,26 +264,7 @@ pub fn load() Config {
         cfg.auto_start = val;
     }
 
-    // Parse "AuthToken":"<value>"
-    if (findJsonString(json_data, "AuthToken")) |token_val| {
-        if (token_val.len > 0 and token_val.len <= 64) {
-            @memcpy(cfg.auth_token[0..token_val.len], token_val);
-            cfg.auth_token_len = token_val.len;
-        }
-    }
-
-    return ensureToken(&cfg);
-}
-
-fn ensureToken(cfg: *Config) Config {
-    if (cfg.auth_token_len == 0) {
-        var tok: [32]u8 = undefined;
-        generateToken(&tok);
-        @memcpy(cfg.auth_token[0..32], tok[0..32]);
-        cfg.auth_token_len = 32;
-        save(cfg);
-    }
-    return cfg.*;
+    return cfg;
 }
 
 fn findJsonString(data: []const u8, key: []const u8) ?[]const u8 {
@@ -401,15 +358,6 @@ pub fn save(cfg: *const Config) void {
     @memcpy(buf[pos .. pos + auto_str.len], auto_str);
     pos += auto_str.len;
 
-    if (cfg.auth_token_len > 0) {
-        const tok_prefix = ",\"AuthToken\":\"";
-        @memcpy(buf[pos .. pos + tok_prefix.len], tok_prefix);
-        pos += tok_prefix.len;
-        @memcpy(buf[pos .. pos + cfg.auth_token_len], cfg.auth_token[0..cfg.auth_token_len]);
-        pos += cfg.auth_token_len;
-        buf[pos] = '"';
-        pos += 1;
-    }
 
     buf[pos] = '}';
     pos += 1;

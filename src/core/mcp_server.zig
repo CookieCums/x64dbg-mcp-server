@@ -453,10 +453,6 @@ fn handleClient(sock: SOCKET) void {
             handleSseConnect(sock);
             return;
         }
-        if (std.mem.eql(u8, path, "/mcp")) {
-            sendServerInfo(sock);
-            return;
-        }
         sendServerInfo(sock);
         _ = ws2.closesocket(sock);
         return;

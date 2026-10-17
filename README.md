@@ -40,8 +40,8 @@ Built with [Zig](https://ziglang.org/) — zero dependencies, single-binary outp
 - **Zero Dependencies:** Pure native plugin, no runtime or framework needed.
 - **x32 and x64:** Single codebase, builds both architectures from one command.
 - **Dual Transport:** Streamable HTTP + SSE — compatible with any MCP client (new and legacy).
-- **Local unauthenticated access:** Token authentication is disabled in this branch; use only with a loopback bind address (`127.0.0.1`).
-- **Config Dialog:** Change IP/port/token from the Plugins menu, auto-restarts the server on save.
+- **No authentication:** MCP requests are accepted without a Bearer token. The default bind address is `0.0.0.0`.
+- **Config Dialog:** Change the bind address and port from the Plugins menu; the server restarts on save.
 - **Auto-Start:** MCP server starts automatically when x64dbg launches.
 - **Cross-Compile:** Build Windows plugins from Linux, macOS, or WSL.
 
@@ -210,7 +210,7 @@ Go to **Plugins > x64dbg-MCP Server > Configure MCP Server...** to change the bi
 
 ### Security
 
-Authentication is disabled in this branch. The MCP endpoint exposes full debugger control, including process memory read/write. This build allows any configured bind address; any client able to reach the server can control the debugger. Choose an address and network exposure appropriate for your setup.
+Authentication is disabled. The server binds to `0.0.0.0` by default and accepts requests from any client that can reach it. The MCP endpoint exposes full debugger control, including process memory read/write. Change the bind address in the configuration dialog when a different interface is needed.
 
 
 ## Building

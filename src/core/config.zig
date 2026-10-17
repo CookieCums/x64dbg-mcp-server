@@ -685,6 +685,12 @@ fn onSave(hwnd: HWND) void {
     else
         true;
 
+    var cfg = load();
+    cfg.port = port;
+    cfg.auto_start = auto_start;
+    @memcpy(cfg.ip[0..ip_len], ip_buf[0..ip_len]);
+    cfg.ip_len = ip_len;
+
     save(&cfg);
 
     mcp.stop();

@@ -58,12 +58,6 @@ extern "user32" fn MessageBoxA(hWnd: HWND, lpText: [*:0]const u8, lpCaption: [*:
 extern "gdi32" fn CreateFontA(cHeight: c_int, cWidth: c_int, cEscapement: c_int, cOrientation: c_int, cWeight: c_int, bItalic: u32, bUnderline: u32, bStrikeOut: u32, iCharSet: u32, iOutPrecision: u32, iClipPrecision: u32, iQuality: u32, iPitchAndFamily: u32, pszFaceName: [*:0]const u8) callconv(.winapi) HFONT;
 extern "gdi32" fn DeleteObject(ho: ?*anyopaque) callconv(.winapi) BOOL;
 extern "user32" fn DefWindowProcA(hWnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winapi) LRESULT;
-extern "user32" fn OpenClipboard(hWndNewOwner: HWND) callconv(.winapi) BOOL;
-extern "user32" fn CloseClipboard() callconv(.winapi) BOOL;
-extern "user32" fn EmptyClipboard() callconv(.winapi) BOOL;
-extern "user32" fn SetClipboardData(uFormat: u32, hMem: HANDLE) callconv(.winapi) HANDLE;
-extern "gdi32" fn GetStockObject(i: c_int) callconv(.winapi) ?*anyopaque;
-extern "gdi32" fn SetBkColor(hdc: HDC, color: u32) callconv(.winapi) u32;
 
 extern "kernel32" fn GetModuleHandleA(lpModuleName: ?[*:0]const u8) callconv(.winapi) HINSTANCE;
 extern "kernel32" fn CreateFileA(name: [*:0]const u8, access: u32, share: u32, sa: ?*anyopaque, disp: u32, flags: u32, template: ?*anyopaque) callconv(.winapi) HANDLE;
@@ -72,9 +66,6 @@ extern "kernel32" fn WriteFile(h: ?*anyopaque, buf: [*]const u8, len: u32, writt
 extern "kernel32" fn CloseHandle(h: ?*anyopaque) callconv(.winapi) BOOL;
 extern "kernel32" fn GetModuleFileNameA(hModule: HINSTANCE, lpFilename: [*]u8, nSize: u32) callconv(.winapi) u32;
 extern "kernel32" fn CreateThread(sa: ?*anyopaque, stackSize: usize, startAddr: *const fn (?*anyopaque) callconv(.winapi) u32, param: ?*anyopaque, flags: u32, id: ?*u32) callconv(.winapi) HANDLE;
-extern "kernel32" fn GlobalAlloc(uFlags: u32, dwBytes: usize) callconv(.winapi) HANDLE;
-extern "kernel32" fn GlobalLock(hMem: HANDLE) callconv(.winapi) ?[*]u8;
-extern "kernel32" fn GlobalUnlock(hMem: HANDLE) callconv(.winapi) BOOL;
 
 const MSG = extern struct {
     hwnd: HWND,
@@ -123,7 +114,6 @@ const OPEN_EXISTING: u32 = 3;
 const CREATE_ALWAYS: u32 = 2;
 const FILE_ATTRIBUTE_NORMAL: u32 = 0x80;
 const INVALID_HANDLE: HANDLE = @ptrFromInt(@as(usize, @truncate(@as(u128, 0xFFFFFFFFFFFFFFFF))));
-const ES_READONLY: u32 = 0x0800;
 const IDC_IP: c_int = 101;
 const IDC_PORT: c_int = 102;
 const IDC_URL: c_int = 103;
@@ -131,16 +121,11 @@ const IDC_AUTOSTART: c_int = 104;
 const IDC_SAVE: c_int = 1;
 const IDC_CANCEL: c_int = 2;
 const BN_CLICKED: u32 = 0;
-const WM_CTLCOLORSTATIC: u32 = 0x0138;
-const CF_TEXT: u32 = 1;
-const GMEM_MOVEABLE: u32 = 0x0002;
-const WHITE_BRUSH: c_int = 0;
 
 // ── DPI awareness (runtime-resolved for Win7/8 compat) ─────────────
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2: ?*anyopaque = @ptrFromInt(@as(usize, @bitCast(@as(isize, -4))));
 
 extern "kernel32" fn GetProcAddress(hModule: HINSTANCE, lpProcName: [*:0]const u8) callconv(.winapi) ?*anyopaque;
-extern "user32" fn GetDlgItem(hDlg: HWND, nIDDlgItem: c_int) callconv(.winapi) HWND;
 
 const SetThreadDpiAwarenessContextFn = *const fn (?*anyopaque) callconv(.winapi) ?*anyopaque;
 const GetDpiForSystemFn = *const fn () callconv(.winapi) u32;

@@ -694,7 +694,7 @@ fn onSave(hwnd: HWND) void {
     save(&cfg);
 
     mcp.stop();
-    mcp.setConfig(cfg.ip[0..cfg.ip_len], cfg.port, "");
+    mcp.setConfig(cfg.ip[0..cfg.ip_len], cfg.port);
     if (cfg.auto_start) mcp.start();
 
     bridge.logPuts("[x64dbg-MCP Server] Configuration saved.\x00");

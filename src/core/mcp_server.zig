@@ -320,7 +320,6 @@ pub fn stop() void {
         bridge.logPuts(@ptrCast(&buf));
     }
 }
-
 fn serverThreadProc(_: ?*anyopaque) callconv(.winapi) u32 {
     serverLoop();
     return 0;

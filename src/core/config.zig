@@ -571,10 +571,6 @@ fn wndProc(hwnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winap
             }
             return 0;
         },
-        WM_CTLCOLORSTATIC => {
-            const ctrl: HWND = @ptrFromInt(@as(usize, @bitCast(lParam)));
-            return DefWindowProcA(hwnd, msg, wParam, lParam);
-        },
         WM_DPICHANGED => {
             const new_dpi: u32 = @intCast(wParam & 0xFFFF);
             if (new_dpi == 0 or new_dpi == cur_dpi) return 0;

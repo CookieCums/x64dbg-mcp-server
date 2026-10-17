@@ -60,7 +60,7 @@ The MCP server starts automatically. Default ports:
 
 ## Usage
 
-Add to your MCP client config (`.mcp.json`, etc.):
+Add to your MCP client config (`.mcp.json`, etc.). Authentication headers are not needed:
 
 **Streamable HTTP (recommended):**
 ```json
@@ -210,7 +210,7 @@ Go to **Plugins > x64dbg-MCP Server > Configure MCP Server...** to change the bi
 
 ### Security
 
-Authentication is disabled in this branch. The MCP endpoint exposes full debugger control, including process memory read/write. Keep the bind address at `127.0.0.1` and do not expose the server to untrusted networks.
+Authentication is disabled in this branch. The MCP endpoint exposes full debugger control, including process memory read/write. This build allows any configured bind address; any client able to reach the server can control the debugger. Choose an address and network exposure appropriate for your setup.
 
 
 ## Building

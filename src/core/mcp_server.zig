@@ -304,7 +304,7 @@ pub fn stop() void {
         _ = CloseHandle(h);
         server_handle = null;
     }
-    bridge.logPuts("[x64dbg-MCP Server] MCP server stopped.\x00");
+    bridge.logPuts("[x64dbg-MCP Server] MCP server stopped.\\x00");
 }
 
 fn serverThreadProc(_: ?*anyopaque) callconv(.winapi) u32 {

@@ -35,3 +35,13 @@ jobs:
 
       - name: Build x32 and x64 plugins
         run: zig build -Doptimize=ReleaseFast
+
+      - name: Upload compiled plugins
+        uses: actions/upload-artifact@v4
+        with:
+          name: x64dbg-mcp-server-plugins
+          path: |
+            zig-out/x32/plugins/x64dbg-MCP-Server.dp32
+            zig-out/x64/plugins/x64dbg-MCP-Server.dp64
+          if-no-files-found: error
+          retention-days: 30

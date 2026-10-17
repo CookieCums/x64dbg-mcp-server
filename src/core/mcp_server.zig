@@ -36,7 +36,7 @@ pub var server_port: u16 = 9094;
 var server_ip: [64]u8 = .{ '0', '.', '0', '.', '0', '.', '0' } ++ .{0} ** 57;
 var server_ip_len: usize = 7;
 
-pub fn setConfig(ip: []const u8, port: u16, _: []const u8) void {
+pub fn setConfig(ip: []const u8, port: u16) void {
     server_port = port;
     if (ip.len > 0 and ip.len < 64) {
         @memcpy(server_ip[0..ip.len], ip);

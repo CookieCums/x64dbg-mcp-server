@@ -215,7 +215,7 @@ fn getConfigPath() [*:0]const u8 {
 pub fn load() Config {
     const default_port: u16 = if (@sizeOf(usize) == 8) 9094 else 9095;
     var cfg = Config{ .port = default_port };
-    const default_ip = "127.0.0.1";
+    const default_ip = "0.0.0.0";
     @memcpy(cfg.ip[0..default_ip.len], default_ip);
     cfg.ip_len = default_ip.len;
 
@@ -528,7 +528,7 @@ fn wndProc(hwnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winap
 
             // Help notes
             const notes = createCtrl("STATIC\x00",
-                "Authentication is disabled; choose any bind address.\r\nUnauthenticated clients can control the debugger.\r\nSave restarts the MCP server.\x00",
+                "Authentication is disabled; default bind is 0.0.0.0.\r\nAny reachable client can control the debugger.\r\nChange the bind address as needed.\x00",
                 0, 20, 160, 400, 52, 0);
             if (notes != null and ui_font_small != null)
                 _ = SendMessageA(notes, WM_SETFONT, @intFromPtr(ui_font_small.?), 1);

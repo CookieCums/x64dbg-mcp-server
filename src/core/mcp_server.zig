@@ -450,25 +450,6 @@ fn handleClient(sock: SOCKET) void {
         return;
     }
 
-    {
-        const headers_slice = if (findHeaderEnd(request)) |he| request[0..he] else request;
-        const tok = parseHeaderValue(headers_slice, "Authorization");
-        var authorized = false;
-        if (tok) |t| {
-            if (t.len > 7 and std.mem.eql(u8, t[0..7], "Bearer ")) {
-                const bearer = t[7..];
-                if (auth_token_len > 0 and bearer.len == auth_token_len and std.mem.eql(u8, bearer, auth_token[0..auth_token_len])) {
-                    authorized = true;
-                }
-            }
-        }
-        if (!authorized) {
-            wsSend(sock, "HTTP/1.1 401 Unauthorized\r\n" ++ CORS_HEADERS ++ "Content-Length: 24\r\n\r\n{\"error\":\"Unauthorized\"}");
-            _ = ws2.closesocket(sock);
-            return;
-        }
-    }
-
     if (std.mem.startsWith(u8, method_line, "GET ")) {
         const path = getPath(method_line);
         if (std.mem.indexOf(u8, path, ".well-known") != null) {
@@ -478,6 +459,10 @@ fn handleClient(sock: SOCKET) void {
         }
         if (std.mem.eql(u8, path, "/sse")) {
             handleSseConnect(sock);
+            return;
+        }
+        if (std.mem.eql(u8, path, "/mcp")) {
+            sendServerInfo(sock);
             return;
         }
         sendServerInfo(sock);

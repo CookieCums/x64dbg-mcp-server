@@ -624,15 +624,8 @@ fn relayoutChildren() void {
     moveCtrl(edit_ip, 112, 20, 190, 24);
     moveCtrl(edit_port, 112, 56, 100, 24);
     moveCtrl(chk_autostart, 20, 96, 250, 20);
-    moveCtrl(lbl_url, 112, 185, 310, 20);
-    if (dlg_hwnd != null) {
-        var h: HWND = GetDlgItem(dlg_hwnd, IDC_SAVE);
-        moveCtrl(h, 240, 230, 90, 30);
-        h = GetDlgItem(dlg_hwnd, IDC_CANCEL);
-        moveCtrl(h, 340, 230, 90, 30);
-    }
+    moveCtrl(lbl_url, 112, 132, 310, 20);
 }
-
 fn updateUrlPreview() void {
     if (lbl_url == null or edit_ip == null or edit_port == null) return;
 

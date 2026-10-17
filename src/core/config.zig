@@ -10,11 +10,10 @@ const HWND = ?*anyopaque;
 const HMENU = ?*anyopaque;
 const HINSTANCE = ?*anyopaque;
 const HFONT = ?*anyopaque;
-const HBRUSH = ?*anyopaque;
 const HICON = ?*anyopaque;
-const HCURSOR = ?*anyopaque;
-const HDC = ?*anyopaque;
+const HBRUSH = ?*anyopaque;
 const HANDLE = ?*anyopaque;
+const HCURSOR = ?*anyopaque;
 const WPARAM = usize;
 const LPARAM = isize;
 const LRESULT = isize;
@@ -58,12 +57,6 @@ extern "user32" fn MessageBoxA(hWnd: HWND, lpText: [*:0]const u8, lpCaption: [*:
 extern "gdi32" fn CreateFontA(cHeight: c_int, cWidth: c_int, cEscapement: c_int, cOrientation: c_int, cWeight: c_int, bItalic: u32, bUnderline: u32, bStrikeOut: u32, iCharSet: u32, iOutPrecision: u32, iClipPrecision: u32, iQuality: u32, iPitchAndFamily: u32, pszFaceName: [*:0]const u8) callconv(.winapi) HFONT;
 extern "gdi32" fn DeleteObject(ho: ?*anyopaque) callconv(.winapi) BOOL;
 extern "user32" fn DefWindowProcA(hWnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winapi) LRESULT;
-extern "user32" fn OpenClipboard(hWndNewOwner: HWND) callconv(.winapi) BOOL;
-extern "user32" fn CloseClipboard() callconv(.winapi) BOOL;
-extern "user32" fn EmptyClipboard() callconv(.winapi) BOOL;
-extern "user32" fn SetClipboardData(uFormat: u32, hMem: HANDLE) callconv(.winapi) HANDLE;
-extern "gdi32" fn GetStockObject(i: c_int) callconv(.winapi) ?*anyopaque;
-extern "gdi32" fn SetBkColor(hdc: HDC, color: u32) callconv(.winapi) u32;
 
 extern "kernel32" fn GetModuleHandleA(lpModuleName: ?[*:0]const u8) callconv(.winapi) HINSTANCE;
 extern "kernel32" fn CreateFileA(name: [*:0]const u8, access: u32, share: u32, sa: ?*anyopaque, disp: u32, flags: u32, template: ?*anyopaque) callconv(.winapi) HANDLE;
@@ -72,9 +65,6 @@ extern "kernel32" fn WriteFile(h: ?*anyopaque, buf: [*]const u8, len: u32, writt
 extern "kernel32" fn CloseHandle(h: ?*anyopaque) callconv(.winapi) BOOL;
 extern "kernel32" fn GetModuleFileNameA(hModule: HINSTANCE, lpFilename: [*]u8, nSize: u32) callconv(.winapi) u32;
 extern "kernel32" fn CreateThread(sa: ?*anyopaque, stackSize: usize, startAddr: *const fn (?*anyopaque) callconv(.winapi) u32, param: ?*anyopaque, flags: u32, id: ?*u32) callconv(.winapi) HANDLE;
-extern "kernel32" fn GlobalAlloc(uFlags: u32, dwBytes: usize) callconv(.winapi) HANDLE;
-extern "kernel32" fn GlobalLock(hMem: HANDLE) callconv(.winapi) ?[*]u8;
-extern "kernel32" fn GlobalUnlock(hMem: HANDLE) callconv(.winapi) BOOL;
 
 const MSG = extern struct {
     hwnd: HWND,
@@ -123,29 +113,18 @@ const OPEN_EXISTING: u32 = 3;
 const CREATE_ALWAYS: u32 = 2;
 const FILE_ATTRIBUTE_NORMAL: u32 = 0x80;
 const INVALID_HANDLE: HANDLE = @ptrFromInt(@as(usize, @truncate(@as(u128, 0xFFFFFFFFFFFFFFFF))));
-const ES_READONLY: u32 = 0x0800;
 const IDC_IP: c_int = 101;
 const IDC_PORT: c_int = 102;
 const IDC_URL: c_int = 103;
 const IDC_AUTOSTART: c_int = 104;
-const IDC_TOKEN: c_int = 105;
-const IDC_GENERATE: c_int = 106;
-const IDC_COPY_TOKEN: c_int = 107;
 const IDC_SAVE: c_int = 1;
 const IDC_CANCEL: c_int = 2;
 const BN_CLICKED: u32 = 0;
-const WM_CTLCOLORSTATIC: u32 = 0x0138;
-const CF_TEXT: u32 = 1;
-const GMEM_MOVEABLE: u32 = 0x0002;
-const WHITE_BRUSH: c_int = 0;
-
-extern "advapi32" fn SystemFunction036(buf: [*]u8, len: u32) callconv(.winapi) u8;
 
 // ── DPI awareness (runtime-resolved for Win7/8 compat) ─────────────
 const DPI_AWARENESS_CONTEXT_PER_MONITOR_AWARE_V2: ?*anyopaque = @ptrFromInt(@as(usize, @bitCast(@as(isize, -4))));
 
 extern "kernel32" fn GetProcAddress(hModule: HINSTANCE, lpProcName: [*:0]const u8) callconv(.winapi) ?*anyopaque;
-extern "user32" fn GetDlgItem(hDlg: HWND, nIDDlgItem: c_int) callconv(.winapi) HWND;
 
 const SetThreadDpiAwarenessContextFn = *const fn (?*anyopaque) callconv(.winapi) ?*anyopaque;
 const GetDpiForSystemFn = *const fn () callconv(.winapi) u32;
@@ -190,36 +169,17 @@ fn sd(design: c_int, dpi: u32) c_int {
     return @intCast(@divTrunc(@as(i64, design) * dpi, USER_DEFAULT_SCREEN_DPI));
 }
 
-fn generateToken(buf: *[32]u8) void {
-    var raw: [16]u8 = undefined;
-    _ = SystemFunction036(&raw, 16);
-    const hex = "0123456789abcdef";
-    for (raw, 0..) |b, i| {
-        buf[i * 2] = hex[b >> 4];
-        buf[i * 2 + 1] = hex[b & 0x0f];
-    }
-}
-
 // ── Config data ────────────────────────────────────────────────────
 pub const Config = struct {
     ip: [64]u8 = undefined,
     ip_len: usize = 0,
     port: u16 = 0,
     auto_start: bool = true,
-    auth_token: [64]u8 = undefined,
-    auth_token_len: usize = 0,
 
     pub fn ipSlice(self: *const Config) []const u8 {
         return self.ip[0..self.ip_len];
     }
 
-    pub fn tokenSlice(self: *const Config) []const u8 {
-        return self.auth_token[0..self.auth_token_len];
-    }
-
-    pub fn hasAuth(self: *const Config) bool {
-        return self.auth_token_len > 0;
-    }
 };
 
 var config_path: [512]u8 = undefined;
@@ -255,18 +215,18 @@ fn getConfigPath() [*:0]const u8 {
 pub fn load() Config {
     const default_port: u16 = if (@sizeOf(usize) == 8) 9094 else 9095;
     var cfg = Config{ .port = default_port };
-    const default_ip = "127.0.0.1";
+    const default_ip = "0.0.0.0";
     @memcpy(cfg.ip[0..default_ip.len], default_ip);
     cfg.ip_len = default_ip.len;
 
     const path = getConfigPath();
     const h = CreateFileA(path, GENERIC_READ, FILE_SHARE_READ, null, OPEN_EXISTING, FILE_ATTRIBUTE_NORMAL, null);
-    if (h == INVALID_HANDLE or h == null) return ensureToken(&cfg);
+    if (h == INVALID_HANDLE or h == null) return cfg;
     defer _ = CloseHandle(h);
 
     var buf: [512]u8 = undefined;
     var bytes_read: u32 = 0;
-    if (ReadFile(h, &buf, 512, &bytes_read, null) == 0) return ensureToken(&cfg);
+    if (ReadFile(h, &buf, 512, &bytes_read, null) == 0) return cfg;
 
     const json_data = buf[0..bytes_read];
 
@@ -288,26 +248,7 @@ pub fn load() Config {
         cfg.auto_start = val;
     }
 
-    // Parse "AuthToken":"<value>"
-    if (findJsonString(json_data, "AuthToken")) |token_val| {
-        if (token_val.len > 0 and token_val.len <= 64) {
-            @memcpy(cfg.auth_token[0..token_val.len], token_val);
-            cfg.auth_token_len = token_val.len;
-        }
-    }
-
-    return ensureToken(&cfg);
-}
-
-fn ensureToken(cfg: *Config) Config {
-    if (cfg.auth_token_len == 0) {
-        var tok: [32]u8 = undefined;
-        generateToken(&tok);
-        @memcpy(cfg.auth_token[0..32], tok[0..32]);
-        cfg.auth_token_len = 32;
-        save(cfg);
-    }
-    return cfg.*;
+    return cfg;
 }
 
 fn findJsonString(data: []const u8, key: []const u8) ?[]const u8 {
@@ -401,15 +342,6 @@ pub fn save(cfg: *const Config) void {
     @memcpy(buf[pos .. pos + auto_str.len], auto_str);
     pos += auto_str.len;
 
-    if (cfg.auth_token_len > 0) {
-        const tok_prefix = ",\"AuthToken\":\"";
-        @memcpy(buf[pos .. pos + tok_prefix.len], tok_prefix);
-        pos += tok_prefix.len;
-        @memcpy(buf[pos .. pos + cfg.auth_token_len], cfg.auth_token[0..cfg.auth_token_len]);
-        pos += cfg.auth_token_len;
-        buf[pos] = '"';
-        pos += 1;
-    }
 
     buf[pos] = '}';
     pos += 1;
@@ -442,7 +374,6 @@ fn fmtU16(val: u16, buf: *[6]u8) usize {
 var dlg_hwnd: HWND = null;
 var edit_ip: HWND = null;
 var edit_port: HWND = null;
-var edit_token: HWND = null;
 var lbl_url: HWND = null;
 var chk_autostart: HWND = null;
 var ui_font: HFONT = null;
@@ -452,7 +383,7 @@ var class_registered: bool = false;
 var parent_hwnd: HWND = null;
 
 const DLG_W = 450;
-const DLG_H = 370;
+const DLG_H = 290;
 const CLASS_NAME = "MCPServerConfig\x00";
 
 var cur_dpi: u32 = 96;
@@ -589,32 +520,22 @@ fn wndProc(hwnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winap
             if (chk_autostart != null and cfg.auto_start)
                 _ = SendMessageA(chk_autostart, BM_SETCHECK, BST_CHECKED, 0);
 
-            // Row 4: Auth Token
-            _ = createCtrl("STATIC\x00", "Auth Token:\x00", 0, 20, 132, 85, 20, 0);
-            edit_token = createCtrl("EDIT\x00", null, WS_TABSTOP | ES_AUTOHSCROLL | ES_READONLY, 112, 128, 190, 24, IDC_TOKEN);
-            _ = createCtrl("BUTTON\x00", "Generate\x00", WS_TABSTOP, 310, 128, 65, 24, IDC_GENERATE);
-            _ = createCtrl("BUTTON\x00", "Copy\x00", WS_TABSTOP, 380, 128, 45, 24, IDC_COPY_TOKEN);
-
-            const auth_hint = createCtrl("STATIC\x00", "Token is auto-generated on first run and persists across restarts.\x00", 0, 112, 155, 320, 16, 0);
-            if (auth_hint != null and ui_font_small != null)
-                _ = SendMessageA(auth_hint, WM_SETFONT, @intFromPtr(ui_font_small.?), 1);
-
-            // Row 5: URL preview
-            _ = createCtrl("STATIC\x00", "Server URL:\x00", 0, 20, 185, 85, 20, 0);
-            lbl_url = createCtrl("STATIC\x00", null, 0, 112, 185, 310, 20, IDC_URL);
+            // Row 4: Server URL
+            _ = createCtrl("STATIC\x00", "Server URL:\x00", 0, 20, 132, 85, 20, 0);
+            lbl_url = createCtrl("STATIC\x00", null, 0, 112, 132, 310, 20, IDC_URL);
             if (lbl_url != null and ui_font_bold != null)
                 _ = SendMessageA(lbl_url, WM_SETFONT, @intFromPtr(ui_font_bold.?), 1);
 
             // Help notes
             const notes = createCtrl("STATIC\x00",
-                "Use 0.0.0.0 to listen on all interfaces (for WSL/remote access).\r\nUse 127.0.0.1 for local-only access.\r\nSave will automatically restart the MCP server.\x00",
-                0, 20, 210, 400, 52, 0);
+                "Authentication is disabled; default bind is 0.0.0.0.\r\nAny reachable client can control the debugger.\r\nChange the bind address as needed.\x00",
+                0, 20, 160, 400, 52, 0);
             if (notes != null and ui_font_small != null)
                 _ = SendMessageA(notes, WM_SETFONT, @intFromPtr(ui_font_small.?), 1);
 
             // Buttons
-            _ = createCtrl("BUTTON\x00", "Save\x00", WS_TABSTOP | BS_DEFPUSHBUTTON, 240, 280, 90, 30, IDC_SAVE);
-            _ = createCtrl("BUTTON\x00", "Cancel\x00", WS_TABSTOP, 340, 280, 90, 30, IDC_CANCEL);
+            _ = createCtrl("BUTTON\x00", "Save\x00", WS_TABSTOP | BS_DEFPUSHBUTTON, 240, 230, 90, 30, IDC_SAVE);
+            _ = createCtrl("BUTTON\x00", "Cancel\x00", WS_TABSTOP, 340, 230, 90, 30, IDC_CANCEL);
             // Set initial values
             if (edit_ip != null) {
                 var ip_z: [65]u8 = undefined;
@@ -627,12 +548,6 @@ fn wndProc(hwnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winap
                 const port_len = fmtU16(cfg.port, &port_buf);
                 port_buf[port_len] = 0;
                 _ = SendMessageA(edit_port, WM_SETTEXT, 0, @bitCast(@intFromPtr(&port_buf)));
-            }
-            if (edit_token != null and cfg.auth_token_len > 0) {
-                var tok_z: [65]u8 = undefined;
-                @memcpy(tok_z[0..cfg.auth_token_len], cfg.auth_token[0..cfg.auth_token_len]);
-                tok_z[cfg.auth_token_len] = 0;
-                _ = SendMessageA(edit_token, WM_SETTEXT, 0, @bitCast(@intFromPtr(&tok_z)));
             }
             updateUrlPreview();
 
@@ -652,54 +567,11 @@ fn wndProc(hwnd: HWND, msg: u32, wParam: WPARAM, lParam: LPARAM) callconv(.winap
                 _ = DestroyWindow(hwnd);
                 return 0;
             }
-            if (id == IDC_GENERATE and notify == BN_CLICKED) {
-                if (edit_token != null) {
-                    var tok: [32]u8 = undefined;
-                    generateToken(&tok);
-                    var tok_z: [33]u8 = undefined;
-                    @memcpy(tok_z[0..32], tok[0..32]);
-                    tok_z[32] = 0;
-                    _ = SendMessageA(edit_token, WM_SETTEXT, 0, @bitCast(@intFromPtr(&tok_z)));
-                }
-                return 0;
-            }
-            if (id == IDC_COPY_TOKEN and notify == BN_CLICKED) {
-                if (edit_token != null) {
-                    var tbuf: [64]u8 = undefined;
-                    const tlen: usize = @intCast(GetWindowTextA(edit_token, &tbuf, 64));
-                    if (tlen > 0) {
-                        if (OpenClipboard(hwnd) != 0) {
-                            _ = EmptyClipboard();
-                            const hmem = GlobalAlloc(GMEM_MOVEABLE, tlen + 1);
-                            if (hmem != null) {
-                                const ptr = GlobalLock(hmem);
-                                if (ptr) |p| {
-                                    @memcpy(p[0..tlen], tbuf[0..tlen]);
-                                    p[tlen] = 0;
-                                    _ = GlobalUnlock(hmem);
-                                    _ = SetClipboardData(CF_TEXT, hmem);
-                                }
-                            }
-                            _ = CloseClipboard();
-                        }
-                    }
-                }
-                return 0;
-            }
             // Update URL preview on text change (EN_CHANGE = 0x0300)
             if (notify == 0x0300 and (id == IDC_IP or id == IDC_PORT)) {
                 updateUrlPreview();
             }
             return 0;
-        },
-        WM_CTLCOLORSTATIC => {
-            const ctrl: HWND = @ptrFromInt(@as(usize, @bitCast(lParam)));
-            if (ctrl == edit_token) {
-                const hdc: HDC = @ptrFromInt(wParam);
-                _ = SetBkColor(hdc, 0x00FFFFFF);
-                return @bitCast(@intFromPtr(GetStockObject(WHITE_BRUSH)));
-            }
-            return DefWindowProcA(hwnd, msg, wParam, lParam);
         },
         WM_DPICHANGED => {
             const new_dpi: u32 = @intCast(wParam & 0xFFFF);
@@ -750,20 +622,8 @@ fn relayoutChildren() void {
     moveCtrl(edit_ip, 112, 20, 190, 24);
     moveCtrl(edit_port, 112, 56, 100, 24);
     moveCtrl(chk_autostart, 20, 96, 250, 20);
-    moveCtrl(edit_token, 112, 128, 190, 24);
-    moveCtrl(lbl_url, 112, 185, 310, 20);
-    if (dlg_hwnd != null) {
-        var h: HWND = GetDlgItem(dlg_hwnd, IDC_SAVE);
-        moveCtrl(h, 240, 280, 90, 30);
-        h = GetDlgItem(dlg_hwnd, IDC_CANCEL);
-        moveCtrl(h, 340, 280, 90, 30);
-        h = GetDlgItem(dlg_hwnd, IDC_GENERATE);
-        moveCtrl(h, 310, 128, 65, 24);
-        h = GetDlgItem(dlg_hwnd, IDC_COPY_TOKEN);
-        moveCtrl(h, 380, 128, 45, 24);
-    }
+    moveCtrl(lbl_url, 112, 132, 310, 20);
 }
-
 fn updateUrlPreview() void {
     if (lbl_url == null or edit_ip == null or edit_port == null) return;
 
@@ -825,23 +685,16 @@ fn onSave(hwnd: HWND) void {
     else
         true;
 
-    var tok_buf: [64]u8 = undefined;
-    const tok_len: usize = if (edit_token != null)
-        @intCast(GetWindowTextA(edit_token, &tok_buf, 64))
-    else
-        0;
-
-    var cfg = Config{ .port = port, .auto_start = auto_start };
+    var cfg = load();
+    cfg.port = port;
+    cfg.auto_start = auto_start;
     @memcpy(cfg.ip[0..ip_len], ip_buf[0..ip_len]);
     cfg.ip_len = ip_len;
-    if (tok_len > 0) {
-        @memcpy(cfg.auth_token[0..tok_len], tok_buf[0..tok_len]);
-    }
-    cfg.auth_token_len = tok_len;
+
     save(&cfg);
 
     mcp.stop();
-    mcp.setConfig(cfg.ip[0..cfg.ip_len], cfg.port, cfg.tokenSlice());
+    mcp.setConfig(cfg.ip[0..cfg.ip_len], cfg.port);
     if (cfg.auto_start) mcp.start();
 
     bridge.logPuts("[x64dbg-MCP Server] Configuration saved.\x00");
